@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bornout — Preview do Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#F3F4F6; --surface:#ffffff; --text:#0F172A; --muted:#64748B; --accent:#334155; --accent2:#0F766E; --success:#16A34A; --warning:#F59E0B;
+      --radius:12px; --gap:16px; --pad:20px;
+    }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Arial;background:var(--bg);color:var(--text)}
+    .app{max-width:1200px;margin:24px auto;padding:16px}
+    header{display:flex;justify-content:space-between;align-items:center}
+    h1{font-size:22px;margin:0}
+    .sub{color:var(--muted);font-size:13px}
+    .layout{display:flex;gap:16px;margin-top:16px}
+    .main{flex:3}
+    .aside{flex:1;display:flex;flex-direction:column;gap:12px}
+    .card{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:0 1px 4px rgba(15,23,42,0.06)}
+    .big{height:320px}
+    .kpi{display:flex;flex-direction:column;gap:8px}
+    .kpi .value{font-weight:700;font-size:18px}
+    .recommendations{display:flex;gap:12px;margin-top:12px}
+    .rec{flex:1;background:#fff;padding:12px;border-radius:10px}
+    .gauge{display:flex;flex-direction:column;align-items:center;gap:8px}
+    .gauge svg{width:160px;height:90px}
+    .legend{display:flex;gap:8px;align-items:center}
+    .legend span{display:inline-block;padding:6px 10px;border-radius:999px;background:#F1F5F9;font-size:12px}
+    .footer{margin-top:20px;color:var(--muted);font-size:13px}
+    /* modal */
+    .modal-back{position:fixed;inset:0;background:rgba(2,6,23,0.45);display:flex;align-items:center;justify-content:center}
+    .modal{width:520px;background:var(--surface);padding:18px;border-radius:12px}
+    .toggles{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+    .toggle{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:#F8FAFC}
+    .btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;border:0;font-weight:600;cursor:pointer}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid #E6EEF6}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Bornout — Painel de Bem‑Estar (Preview)</h1>
+        <div class="sub">Protótipo para demonstração com dados sintéticos • Estilo: Neutro e acessível</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn" id="open-consent">Consentimento</button>
+        <button class="btn ghost" id="toggle-sim">Pausar simulação</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main class="main">
+        <div class="card big" style="display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:14px;color:var(--muted)">Índice de Bem‑Estar</div>
+              <div style="font-weight:700;font-size:18px">Últimos 30 dias</div>
+            </div>
+            <div style="color:var(--muted);font-size:13px">Atualizado: <span id="last-update">—</span></div>
+          </div>
+          <canvas id="wellbeingChart" style="flex:1;margin-top:12px"></canvas>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:12px;align-items:stretch">
+          <div class="card" style="flex:1">
+            <div style="font-weight:700">Trajetória recente</div>
+            <div style="margin-top:8px;color:var(--muted);font-size:13px">Tendência dos últimos 14 dias e pontos de EMA</div>
+            <div id="mini-trajectory" style="height:90px;display:flex;align-items:center;justify-content:center;color:var(--muted)">[mini‑gráfico]</div>
+          </div>
+
+          <div class="card" style="width:260px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:700">Recomendações</div>
+              <div style="font-size:12px;color:var(--muted)">Personalizadas</div>
+            </div>
+            <div class="recommendations" id="recs">
+              <!-- cards -->
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <aside class="aside">
+        <div class="card gauge">
+          <div style="font-size:13px;color:var(--muted)">Risco estimado</div>
+          <svg id="gaugeSvg" viewBox="0 0 100 50"></svg>
+          <div style="font-weight:700" id="gaugeValue">—</div>
+          <div style="font-size:12px;color:var(--muted)" id="gaugeSub">Última atualização: —</div>
+        </div>
+
+        <div class="card kpi">
+          <div style="font-size:13px;color:var(--muted)">Horas ativas (média)</div>
+          <div class="value" id="kpi-active">— h</div>
+        </div>
+
+        <div class="card kpi">
+          <div style="font-size:13px;color:var(--muted)">EMA (último)</div>
+          <div class="value" id="kpi-ema">—</div>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700">Biomarcadores (exemplo)</div>
+          <ul style="margin:8px 0 0 16px;color:var(--muted)">
+            <li id="bm-night">Atividade noturna: — min</li>
+            <li id="bm-sessions">Sessões/dia: —</li>
+            <li id="bm-keystroke">Velocidade de digitação: — cpm</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">Este preview usa apenas dados sintéticos para demonstração. Nenhum dado real é coletado.</div>
+  </div>
+
+  <!-- consent modal (hidden) -->
+  <div id="consentModal" style="display:none" class="modal-back">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h3>Consentimento para Participação (Preview)</h3>
+      <p class="sub">Escolha as categorias de dados que autoriza a compartilhar neste estudo‑demo.</p>
+      <div class="toggles">
+        <div class="toggle"><div><strong>Metadados de uso</strong><div style="font-size:12px;color:var(--muted)">Horários e duração de uso — sem conteúdo</div></div><label><input type="checkbox" checked id="t1"></label></div>
+        <div class="toggle"><div><strong>Categorias de apps</strong><div style="font-size:12px;color:var(--muted)">Apenas categoria (ex.: navegadores, editores)</div></div><label><input type="checkbox" checked id="t2"></label></div>
+        <div class="toggle"><div><strong>Keystroke timings</strong><div style="font-size:12px;color:var(--muted)">Somente timings entre teclas — sem conteúdo</div></div><label><input type="checkbox" checked id="t3"></label></div>
+        <div class="toggle"><div><strong>EMA</strong><div style="font-size:12px;color:var(--muted)">Perguntas curtas periódicas</div></div><label><input type="checkbox" checked id="t4"></label></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+        <button class="btn ghost" id="consClose">Fechar</button>
+        <button class="btn" id="consAgree">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // synthetic data generator (14-30 days)
+    function generateSyntheticSeries(days=30){
+      const arr=[]; const now=new Date();
+      for(let i=days-1;i>=0;i--){
+        const d=new Date(now); d.setDate(now.getDate()-i);
+        const baseActive=6 + Math.sin(d.getDate()/7)*1.2;
+        const sessions=Math.max(1, Math.round(3 + Math.random()*3));
+        const avgLen=Math.max(5, Math.round(30 + (Math.random()-0.5)*10));
+        const nightActivity=Math.round(Math.max(0, Math.random()*160*(Math.random()<0.2?1.6:1)));
+        const keystroke=200 + (Math.random()-0.5)*50;
+        const ema=Math.round(Math.max(20, Math.min(90, 70 - (Math.random()-0.5)*35)));
+        arr.push({date:d.toISOString().slice(0,10),activeHours:parseFloat((baseActive+(Math.random()-0.5)).toFixed(1)),sessions,avgLen,nightActivity,keystroke:Math.round(keystroke),ema});
+      }
+      return arr;
+    }
+
+    let simRunning=true;
+    let series=generateSyntheticSeries(30);
+
+    const ctx=document.getElementById('wellbeingChart').getContext('2d');
+    const labels=series.map(s=>s.date);
+    const dataVals=series.map(s=>s.ema);
+    const chart=new Chart(ctx,{type:'line',data:{labels, datasets:[{label:'Índice de Bem‑Estar',data:dataVals,borderColor:'#0F766E',backgroundColor:'rgba(15,118,110,0.08)',fill:true,tension:0.35}]},options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:100}},responsive:true,maintainAspectRatio:false}});
+
+    function updateKPI(){
+      const last=series[series.length-1];
+      document.getElementById('last-update').textContent=last.date;
+      document.getElementById('kpi-active').textContent=(series.reduce((s,x)=>s+x.activeHours,0)/series.length).toFixed(1)+" h";
+      document.getElementById('kpi-ema').textContent=last.ema;
+      document.getElementById('bm-night').textContent='Atividade noturna: '+last.nightActivity+' min';
+      document.getElementById('bm-sessions').textContent='Sessões/dia: '+last.sessions;
+      document.getElementById('bm-keystroke').textContent='Velocidade: '+last.keystroke+' cpm';
+
+      // risk heuristic (simple): increase with nightActivity, sessions, decrease with ema
+      const score=Math.min(95, Math.round((last.nightActivity/180)*30 + (last.sessions/10)*25 + (50 - last.ema)/2));
+      renderGauge(score);
+      document.getElementById('gaugeValue').textContent=score+'% — '+(score<35? 'Baixo': score<65? 'Moderado': 'Alto');
+      document.getElementById('gaugeSub').textContent='Última atualização: '+last.date;
+
+      // recommendations (simple rules)
+      const recsEl=document.getElementById('recs'); recsEl.innerHTML='';
+      if(score>=50){ addRec('Agendar conversa com orientador','Considere discutir carga de trabalho com seu gestor.'); }
+      addRec('Pausa ativa — 10 min','Faça alongamento ou caminhe por 10 minutos.');
+      if(last.nightActivity>60) addRec('Higiene do sono','Evite atividades intensas após 22h.');
+    }
+
+    function addRec(title,desc){
+      const div=document.createElement('div'); div.className='rec'; div.style.padding='10px'; div.innerHTML=`<div style="font-weight:700">${title}</div><div style="font-size:13px;color:${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">${desc}</div>`; document.getElementById('recs').appendChild(div);
+    }
+
+    function renderGauge(score){
+      const svg=document.getElementById('gaugeSvg'); svg.innerHTML='';
+      const start=10, end=170; const sweep=(score/100);
+      const arcPath = describeArc(50,50,42,180 - sweep*180, 180);
+      // background arc
+      const bg=document.createElementNS('http://www.w3.org/2000/svg','path'); bg.setAttribute('d',describeArc(50,50,42,0,180)); bg.setAttribute('fill','none'); bg.setAttribute('stroke','#E6EEF6'); bg.setAttribute('stroke-width','10'); svg.appendChild(bg);
+      // colored arc (approx by stroke color)
+      const col=document.createElementNS('http://www.w3.org/2000/svg','path'); col.setAttribute('d',describeArc(50,50,42,180 - sweep*180, 180)); col.setAttribute('fill','none'); col.setAttribute('stroke', score<35? '#16A34A': score<65? '#F59E0B':'#DC2626'); col.setAttribute('stroke-width','10'); col.setAttribute('stroke-linecap','round'); svg.appendChild(col);
+    }
+
+    // helper arc math
+    function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+      var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
+      return {
+        x: centerX + (radius * Math.cos(angleInRadians)),
+        y: centerY + (radius * Math.sin(angleInRadians))
+      };
+    }
+    function describeArc(x, y, radius, startAngle, endAngle){
+      var start = polarToCartesian(x, y, radius, endAngle);
+      var end = polarToCartesian(x, y, radius, startAngle);
+      var largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+      var d = ['M', start.x, start.y, 'A', radius, radius, 0, largeArcFlag, 0, end.x, end.y].join(' ');
+      return d;
+    }
+
+    // initial render
+    updateChart(); updateKPI();
+
+    function updateChart(){
+      chart.data.labels = series.map(s=>s.date);
+      chart.data.datasets[0].data = series.map(s=>s.ema);
+      chart.update();
+    }
+
+    // simulate new day tick every 5s when running
+    let tickInterval = setInterval(()=>{
+      if(!simRunning) return;
+      const d = new Date(); d.setDate(d.getDate());
+      // shift: drop oldest, add new synthetic
+      series.shift(); series.push(generateSyntheticSeries(1)[0]);
+      updateChart(); updateKPI();
+    },5000);
+
+    document.getElementById('toggle-sim').addEventListener('click',()=>{
+      simRunning = !simRunning; document.getElementById('toggle-sim').textContent = simRunning? 'Pausar simulação' : 'Retomar simulação';
+    });
+
+    document.getElementById('open-consent').addEventListener('click',()=>{ document.getElementById('consentModal').style.display='flex'; });
+    document.getElementById('consClose').addEventListener('click',()=>{ document.getElementById('consentModal').style.display='none'; });
+    document.getElementById('consAgree').addEventListener('click',()=>{ alert('Consentimento (demo) registrado localmente — isto é apenas uma pré‑visualização.'); document.getElementById('consentModal').style.display='none'; });
+
+    // helper to generate small series
+    function generateSyntheticSeries(days=1){
+      const arr=[]; const now=new Date();
+      for(let i=days-1;i>=0;i--){
+        const d=new Date(now); d.setDate(now.getDate()-i);
+        const baseActive=6 + Math.sin(d.getDate()/7)*1.2;
+        const sessions=Math.max(1, Math.round(3 + Math.random()*3));
+        const avgLen=Math.max(5, Math.round(30 + (Math.random()-0.5)*10));
+        const nightActivity=Math.round(Math.max(0, Math.random()*160*(Math.random()<0.2?1.6:1)));
+        const keystroke=200 + (Math.random()-0.5)*50;
+        const ema=Math.round(Math.max(20, Math.min(90, 70 - (Math.random()-0.5)*35)));
+        arr.push({date:d.toISOString().slice(0,10),activeHours:parseFloat((baseActive+(Math.random()-0.5)).toFixed(1)),sessions,avgLen,nightActivity,keystroke:Math.round(keystroke),ema});
+      }
+      return arr;
+    }
+
+    // initial fill recommendations
+    function initRecs(){ addRec('Pausa ativa — 10 min','Faça alongamento ou caminhe por 10 minutos.'); addRec('Higiene do sono','Evite atividades intensas após 22h.'); }
+    initRecs();
+  </script>
+</body>
+</html>
