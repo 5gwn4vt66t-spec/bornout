@@ -1,0 +1,26 @@
+{
+  "name": "bornout-prototype",
+  "version": "0.1.0",
+  "description": "Prototipo Electron + React + TypeScript para pesquisa sobre Biomarcadores Digitais Comportamentais de Burnout",
+  "main": "public/electron.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "electron .",
+    "package": "electron-builder"
+  },
+  "author": "Projeto Bornout",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^26.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.14",
+    "@types/react-dom": "^18.2.6",
+    "typescript": "^5.2.0",
+    "vite": "^5.0.0",
+    "electron-builder": "^24.5.0"
+  }
+}
